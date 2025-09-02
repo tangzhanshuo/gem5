@@ -73,10 +73,20 @@ class RoutingUnit
                          int inport,
                          PortDirection inport_dirn);
 
-    // Custom Routing Algorithm using Port Directions
-    int outportComputeCustom(RouteInfo route,
-                             int inport,
-                             PortDirection inport_dirn);
+    // Routing for 3D Cube
+    int outportComputeZXY(RouteInfo route,
+                          int inport,
+                          PortDirection inport_dirn);
+
+    // Deterministic Custom Routing
+    int outportComputeCustomDeterministic(RouteInfo route,
+                                          int inport,
+                                          PortDirection inport_dirn);
+
+    // Adaptive Custom Routing
+    int outportComputeCustomAdaptive(RouteInfo route,
+                                     int inport,
+                                     PortDirection inport_dirn);
 
     // Returns true if vnet is present in the vector
     // of vnets or if the vector supports all vnets.

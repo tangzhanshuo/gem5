@@ -191,8 +191,12 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
         case XY_:     outport =
             outportComputeXY(route, inport, inport_dirn); break;
         // any custom algorithm
-        case CUSTOM_: outport =
-            outportComputeCustom(route, inport, inport_dirn); break;
+        case ZXY_: outport =
+            outportComputeZXY(route, inport, inport_dirn); break;
+        case CUSTOM_DETERMINISTIC_: outport =
+            outportComputeCustomDeterministic(route, inport, inport_dirn); break;
+        case CUSTOM_ADAPTIVE_: outport =
+            outportComputeCustomAdaptive(route, inport, inport_dirn); break;
         default: outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
     }
@@ -260,12 +264,29 @@ RoutingUnit::outportComputeXY(RouteInfo route,
     return m_outports_dirn2idx[outport_dirn];
 }
 
-// Template for implementing custom routing algorithm
-// using port directions. (Example adaptive)
+// Routing for 3D Cube
 int
-RoutingUnit::outportComputeCustom(RouteInfo route,
-                                 int inport,
-                                 PortDirection inport_dirn)
+RoutingUnit::outportComputeZXY(RouteInfo route,
+                               int inport,
+                               PortDirection inport_dirn)
+{
+    panic("%s placeholder executed", __FUNCTION__);
+}
+
+// Deterministic Custom Routing
+int
+RoutingUnit::outportComputeCustomDeterministic(RouteInfo route,
+                                               int inport,
+                                               PortDirection inport_dirn)
+{
+    panic("%s placeholder executed", __FUNCTION__);
+}
+
+// Adaptive Custom Routing
+int
+RoutingUnit::outportComputeCustomAdaptive(RouteInfo route,
+                                          int inport,
+                                          PortDirection inport_dirn)
 {
     panic("%s placeholder executed", __FUNCTION__);
 }
