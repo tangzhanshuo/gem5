@@ -191,12 +191,12 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
         case XY_:     outport =
             outportComputeXY(route, inport, inport_dirn); break;
         // any custom algorithm
-        case CUSTOM_: outport =
-            outportComputeCustom(route, inport, inport_dirn); break;
-        
-        // Routing algorithm for cubic close packing
-        case PACKING_: outport =
-            outportComputePacking(route, inport, inport_dirn); break;
+        case ZXY_: outport =
+            outportComputeZXY(route, inport, inport_dirn); break;
+        case CUSTOM_DETERMINISTIC_: outport =
+            outportComputeCustomDeterministic(route, inport, inport_dirn); break;
+        case CUSTOM_ADAPTIVE_: outport =
+            outportComputeCustomAdaptive(route, inport, inport_dirn); break;
         default: outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
     }
@@ -264,12 +264,90 @@ RoutingUnit::outportComputeXY(RouteInfo route,
     return m_outports_dirn2idx[outport_dirn];
 }
 
-// Template for implementing custom routing algorithm
-// using port directions. (Example adaptive)
+// Routing for 3D Cube
 int
-RoutingUnit::outportComputeCustom(RouteInfo route,
-                                 int inport,
-                                 PortDirection inport_dirn)
+RoutingUnit::outportComputeZXY(RouteInfo route,
+                               int inport,
+                               PortDirection inport_dirn)
+{
+    PortDirection outport_dirn = "Unknown";
+
+    [[maybe_unused]] int num_rows = m_router->get_net_ptr()->getNumRows();
+    int num_cols = m_router->get_net_ptr()->getNumCols();
+    int num_layers = m_router->get_net_ptr()->getNumLayers();
+    assert(num_rows > 0 && num_cols > 0 && num_layers > 0);
+
+    int my_id = m_router->get_id();
+    int my_x = my_id % num_cols;
+    int my_y = (my_id / num_cols) % num_rows;
+    int my_z = my_id / (num_cols * num_rows);
+
+    int dest_id = route.dest_router;
+    int dest_x = dest_id % num_cols;
+    int dest_y = (dest_id / num_cols) % num_rows;
+    int dest_z = dest_id / (num_cols * num_rows);
+
+    int x_hops = abs(dest_x - my_x);
+    int y_hops = abs(dest_y - my_y);
+    int z_hops = abs(dest_z - my_z);
+
+    bool x_dirn = (dest_x >= my_x);
+    bool y_dirn = (dest_y >= my_y);
+    bool z_dirn = (dest_z >= my_z);
+
+    // already checked that in outportCompute() function
+    assert(!(x_hops == 0 && y_hops == 0 && z_hops == 0));
+
+    if (z_hops > 0) {
+        if (z_dirn) {
+            assert(inport_dirn == "Local" || inport_dirn == "Down");
+            outport_dirn = "Up";
+        } else {
+            assert(inport_dirn == "Local" || inport_dirn == "Up");
+            outport_dirn = "Down";
+        }
+    } else if (x_hops > 0) {
+        if (x_dirn) {
+            assert(inport_dirn == "Local" || inport_dirn == "West");
+            outport_dirn = "East";
+        } else {
+            assert(inport_dirn == "Local" || inport_dirn == "East");
+            outport_dirn = "West";
+        }
+    } else if (y_hops > 0) {
+        if (y_dirn) {
+            // "Local" or "South" or "West" or "East" or "Up" or "Down"
+            assert(inport_dirn != "North");
+            outport_dirn = "North";
+        } else {
+            // "Local" or "North" or "West" or "East" or "Up" or "Down"
+            assert(inport_dirn != "South");
+            outport_dirn = "South";
+        }
+    } else {
+        // x_hops == 0 and y_hops == 0 and z_hops == 0
+        // this is not possible
+        // already checked that in outportCompute() function
+        panic("x_hops == y_hops == z_hops == 0");
+    }
+
+    return m_outports_dirn2idx[outport_dirn];
+}
+
+// Deterministic Custom Routing
+int
+RoutingUnit::outportComputeCustomDeterministic(RouteInfo route,
+                                               int inport,
+                                               PortDirection inport_dirn)
+{
+    panic("%s placeholder executed", __FUNCTION__);
+}
+
+// Adaptive Custom Routing
+int
+RoutingUnit::outportComputeCustomAdaptive(RouteInfo route,
+                                          int inport,
+                                          PortDirection inport_dirn)
 {
     panic("%s placeholder executed", __FUNCTION__);
 }
