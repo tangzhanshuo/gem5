@@ -193,6 +193,10 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
         // any custom algorithm
         case CUSTOM_: outport =
             outportComputeCustom(route, inport, inport_dirn); break;
+        
+        // Routing algorithm for cubic close packing
+        case PACKING_: outport =
+            outportComputePacking(route, inport, inport_dirn); break;
         default: outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
     }

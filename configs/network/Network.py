@@ -119,6 +119,22 @@ def define_options(parser):
             channel for each virtual network""",
     )
 
+    parser.add_argument(
+        "--packing-rows",
+        action="store",
+        type=int,
+        default=4,
+        help="""number of rows to pack in the Cubic Close Packing topology""",
+    )
+
+    parser.add_argument(
+        "--packing-columns",
+        action="store",
+        type=int,
+        default=4,
+        help="""number of columns to pack in the Cubic Close Packing topology""",
+    )
+
 
 def create_network(options, ruby):
 
