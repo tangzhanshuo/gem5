@@ -274,7 +274,7 @@ RoutingUnit::outportComputeZXY(RouteInfo route,
 
     [[maybe_unused]] int num_rows = m_router->get_net_ptr()->getNumRows();
     int num_cols = m_router->get_net_ptr()->getNumCols();
-    int num_layers = m_router->get_net_ptr()->getNumLayers();
+    int num_layers = 1; //m_router->get_net_ptr()->getNumLayers();
     assert(num_rows > 0 && num_cols > 0 && num_layers > 0);
 
     int my_id = m_router->get_id();

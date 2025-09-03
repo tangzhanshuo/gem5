@@ -15,8 +15,8 @@ from topologies.BaseTopology import SimpleTopology
 # to guarantee deadlock freedom.
 
 
-class CubicClosePacking(SimpleTopology):
-    description = "CubicClosePacking"
+class Cubic(SimpleTopology):
+    description = "Cubic"
 
     def __init__(self, controllers):
         self.nodes = controllers
@@ -102,20 +102,11 @@ class CubicClosePacking(SimpleTopology):
             x = x % num_rows
             y = y % num_columns
             z = z % num_layers
-            if z % 2 == 0:
-                return int(z * (num_rows * num_columns) + x * num_columns + y)
-            else:
-                return int(z * (num_rows * num_columns) + (x - 0.5) * num_columns + (y - 0.5))
+            return int(z * (num_rows * num_columns) + x * num_columns + y)
 
         for z in range(num_layers):
-            for _x in range(num_rows):
-                for _y in range(num_columns):
-                    if z % 2 == 0:
-                        x = _x
-                        y = _y
-                    else: # Offset: Odd layers have non-integer x&y coordinates    
-                        x = _x + 0.5
-                        y = _y + 0.5
+            for x in range(num_rows):
+                for y in range(num_columns):
                     current_pos = (x, y, z)
 
                     def add_link(pos, src_outport, dst_inport, weight):
@@ -140,28 +131,17 @@ class CubicClosePacking(SimpleTopology):
                     right_pos = (x+1, y, z)
                     down_pos = (x, y-1, z)
                     up_pos = (x, y+1, z)
-                    ppp_pos = (x+0.5, y+0.5, z+1)
-                    ppn_pos = (x+0.5, y+0.5, z-1)
-                    pnp_pos = (x+0.5, y-0.5, z+1)
-                    pnn_pos = (x+0.5, y-0.5, z-1)
-                    npp_pos = (x-0.5, y+0.5, z+1)
-                    npn_pos = (x-0.5, y+0.5, z-1)
-                    nnp_pos = (x-0.5, y-0.5, z+1)
-                    nnn_pos = (x-0.5, y-0.5, z-1)
+                    back_pos = (x, y, z-1)
+                    front_pos = (x, y, z+1)
 
 
                     add_link(left_pos, '+00', '-00', 3)
                     add_link(right_pos, '-00', '+00', 3)
                     add_link(down_pos, '0+0', '0-0', 2)
                     add_link(up_pos, '0-0', '0+0', 2)
-                    add_link(ppp_pos, '---', '+++', 1)
-                    add_link(ppn_pos, '--+', '++-', 1)
-                    add_link(pnp_pos, '-+-', '+-+', 1)
-                    add_link(pnn_pos, '-++', '+--', 1)
-                    add_link(npp_pos, '+--', '-++', 1)
-                    add_link(npn_pos, '+-+', '-+-', 1)
-                    add_link(nnp_pos, '++-', '--+', 1)
-                    add_link(nnn_pos, '+++', '---', 1)
+                    add_link(back_pos, '00+', '00-', 1)
+                    add_link(front_pos, '00-', '00+', 1)
+
 
         network.int_links = int_links
 
