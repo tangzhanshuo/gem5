@@ -99,17 +99,17 @@ class CubicClosePacking(SimpleTopology):
         int_links = []
         def Pos2Idx(pos):
             x, y, z = pos
-            x = x % num_rows
-            y = y % num_columns
+            x = x % num_columns
+            y = y % num_rows
             z = z % num_layers
             if z % 2 == 0:
-                return int(z * (num_rows * num_columns) + x * num_columns + y)
+                return int(z * (num_rows * num_columns) + y * num_columns + x)
             else:
-                return int(z * (num_rows * num_columns) + (x - 0.5) * num_columns + (y - 0.5))
+                return int(z * (num_rows * num_columns) + (y - 0.5) * num_columns + (x - 0.5))
 
         for z in range(num_layers):
-            for _x in range(num_rows):
-                for _y in range(num_columns):
+            for _x in range(num_columns):
+                for _y in range(num_rows):
                     if z % 2 == 0:
                         x = _x
                         y = _y
