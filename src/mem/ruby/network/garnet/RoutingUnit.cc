@@ -300,29 +300,27 @@ RoutingUnit::outportComputeZXY(RouteInfo route,
 
     if (z_hops > 0) {
         if (z_dirn) {
-            assert(inport_dirn == "Local" || inport_dirn == "Down");
-            outport_dirn = "Up";
+            assert(inport_dirn == "Local" || inport_dirn == "00-");
+            outport_dirn = "00+";
         } else {
-            assert(inport_dirn == "Local" || inport_dirn == "Up");
-            outport_dirn = "Down";
+            assert(inport_dirn == "Local" || inport_dirn == "00+");
+            outport_dirn = "00-";
         }
     } else if (x_hops > 0) {
         if (x_dirn) {
-            assert(inport_dirn == "Local" || inport_dirn == "West");
-            outport_dirn = "East";
+            assert(inport_dirn == "Local" || inport_dirn == "-00" || inport_dirn == "00-" || inport_dirn == "00+");
+            outport_dirn = "+00";
         } else {
-            assert(inport_dirn == "Local" || inport_dirn == "East");
-            outport_dirn = "West";
+            assert(inport_dirn == "Local" || inport_dirn == "+00" || inport_dirn == "00-" || inport_dirn == "00+");
+            outport_dirn = "-00";
         }
     } else if (y_hops > 0) {
         if (y_dirn) {
-            // "Local" or "South" or "West" or "East" or "Up" or "Down"
-            assert(inport_dirn != "North");
-            outport_dirn = "North";
+            assert(inport_dirn != "0+0");
+            outport_dirn = "0+0";
         } else {
-            // "Local" or "North" or "West" or "East" or "Up" or "Down"
-            assert(inport_dirn != "South");
-            outport_dirn = "South";
+            assert(inport_dirn != "0-0");
+            outport_dirn = "0-0";
         }
     } else {
         // x_hops == 0 and y_hops == 0 and z_hops == 0

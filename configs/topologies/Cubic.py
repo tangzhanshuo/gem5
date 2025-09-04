@@ -99,14 +99,14 @@ class Cubic(SimpleTopology):
         int_links = []
         def Pos2Idx(pos):
             x, y, z = pos
-            x = x % num_rows
-            y = y % num_columns
+            x = x % num_columns
+            y = y % num_rows
             z = z % num_layers
-            return int(z * (num_rows * num_columns) + x * num_columns + y)
+            return int(z * (num_rows * num_columns) + y * num_columns + x)
 
         for z in range(num_layers):
-            for x in range(num_rows):
-                for y in range(num_columns):
+            for x in range(num_columns):
+                for y in range(num_rows):
                     current_pos = (x, y, z)
 
                     def add_link(pos, src_outport, dst_inport, weight):
@@ -135,10 +135,10 @@ class Cubic(SimpleTopology):
                     front_pos = (x, y, z+1)
 
 
-                    add_link(left_pos, '+00', '-00', 3)
-                    add_link(right_pos, '-00', '+00', 3)
-                    add_link(down_pos, '0+0', '0-0', 2)
-                    add_link(up_pos, '0-0', '0+0', 2)
+                    add_link(left_pos, '+00', '-00', 2)
+                    add_link(right_pos, '-00', '+00', 2)
+                    add_link(down_pos, '0+0', '0-0', 3)
+                    add_link(up_pos, '0-0', '0+0', 3)
                     add_link(back_pos, '00+', '00-', 1)
                     add_link(front_pos, '00-', '00+', 1)
 
