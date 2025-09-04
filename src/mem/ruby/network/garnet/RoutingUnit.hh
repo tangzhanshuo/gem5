@@ -78,17 +78,11 @@ class RoutingUnit
                           int inport,
                           PortDirection inport_dirn);
 
-    // Deterministic Custom Routing
-    int outportComputeCustomDeterministic(RouteInfo route,
+    // Custom Routing for CubicClosePacking
+    int outportComputeCustom(RouteInfo route,
                                           int inport,
-                                          PortDirection inport_dirn);
-
-    // Adaptive Custom Routing
-    int outportComputeCustomAdaptive(RouteInfo route,
-                                     int inport,
-                                     PortDirection inport_dirn);
-
-    int outportComputePacking();
+                                          PortDirection inport_dirn,
+                                          bool adaptive);
 
     // Returns true if vnet is present in the vector
     // of vnets or if the vector supports all vnets.

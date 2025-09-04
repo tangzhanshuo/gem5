@@ -37,6 +37,8 @@
 #include "mem/ruby/network/garnet/Router.hh"
 #include "mem/ruby/slicc_interface/Message.hh"
 
+#include <random>
+
 namespace gem5
 {
 
@@ -194,9 +196,9 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
         case ZXY_: outport =
             outportComputeZXY(route, inport, inport_dirn); break;
         case CUSTOM_DETERMINISTIC_: outport =
-            outportComputeCustomDeterministic(route, inport, inport_dirn); break;
+            outportComputeCustom(route, inport, inport_dirn, false); break;
         case CUSTOM_ADAPTIVE_: outport =
-            outportComputeCustomAdaptive(route, inport, inport_dirn); break;
+            outportComputeCustom(route, inport, inport_dirn, true); break;
         default: outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
     }
@@ -332,22 +334,121 @@ RoutingUnit::outportComputeZXY(RouteInfo route,
     return m_outports_dirn2idx[outport_dirn];
 }
 
-// Deterministic Custom Routing
-int
-RoutingUnit::outportComputeCustomDeterministic(RouteInfo route,
-                                               int inport,
-                                               PortDirection inport_dirn)
-{
-    panic("%s placeholder executed", __FUNCTION__);
+char getXYdirn(int my_x, int dest_x, int z_hops, int max_x, bool adaptive) {
+    assert (abs(dest_x - my_x) % 2 == z_hops % 2);
+
+    if (my_x == 0) return '+';
+    if (my_x == max_x - 1) return '-';
+
+    if (abs(my_x - dest_x) >= z_hops) {
+        return my_x < dest_x ? '+' : '-';
+    }
+
+    if (!adaptive) return '-';
+
+    std::vector<std::vector<int>> route_count(max_x, std::vector<int>(z_hops + 1, 0));
+
+    route_count[dest_x][0] = 1;
+    for (int z = 1; z <= z_hops; z++) {
+        for (int x = 0; x < max_x; x++) {
+            if (x > 0) route_count[x][z] += route_count[x - 1][z - 1];
+            if (x < max_x - 1) route_count[x][z] += route_count[x + 1][z - 1];
+        }
+    }
+
+    int left_routes = route_count[my_x - 1][z_hops - 1];
+    int right_routes = route_count[my_x + 1][z_hops - 1];
+
+    assert (left_routes > 0 && right_routes > 0);
+
+    static std::mt19937 gen(12345);
+    std::uniform_int_distribution<int> dis(0, left_routes + right_routes - 1);
+    int choice = dis(gen);
+
+    if (choice < left_routes) return '-';
+    else return '+';
 }
 
-// Adaptive Custom Routing
+// Custom Routing for CubicClosePacking
 int
-RoutingUnit::outportComputeCustomAdaptive(RouteInfo route,
-                                          int inport,
-                                          PortDirection inport_dirn)
+RoutingUnit::outportComputeCustom(RouteInfo route,
+                                  int inport,
+                                  PortDirection inport_dirn,
+                                  bool adaptive)
 {
-    panic("%s placeholder executed", __FUNCTION__);
+    PortDirection outport_dirn = "Unknown";
+
+    [[maybe_unused]] int num_rows = m_router->get_net_ptr()->getNumRows();
+    int num_cols = m_router->get_net_ptr()->getNumCols();
+    int num_layers = m_router->get_net_ptr()->getNumLayers();
+    assert(num_rows > 0 && num_cols > 0 && num_layers > 0);
+
+    int my_id = m_router->get_id();
+    int my_x = my_id % num_cols;
+    int my_y = (my_id / num_cols) % num_rows;
+    int my_z = my_id / (num_cols * num_rows);
+
+    int dest_id = route.dest_router;
+    int dest_x = dest_id % num_cols;
+    int dest_y = (dest_id / num_cols) % num_rows;
+    int dest_z = dest_id / (num_cols * num_rows);
+
+    int x_hops = abs(dest_x - my_x);
+    int y_hops = abs(dest_y - my_y);
+    int z_hops = abs(dest_z - my_z);
+
+    bool x_dirn = (dest_x >= my_x);
+    bool y_dirn = (dest_y >= my_y);
+    bool z_dirn = (dest_z >= my_z);
+
+    // already checked that in outportCompute() function
+    assert(!(x_hops == 0 && y_hops == 0 && z_hops == 0));
+
+    if (z_hops > 0) {
+        // Actual XY coordinates
+        my_x = my_x * 2 + my_z % 2;
+        my_y = my_y * 2 + my_z % 2;
+        dest_x = dest_x * 2 + dest_z % 2;
+        dest_y = dest_y * 2 + dest_z % 2;
+
+        outport_dirn = "000";
+
+        outport_dirn[0] = getXYdirn(my_x, dest_x, z_hops, num_cols * 2, adaptive);
+        outport_dirn[1] = getXYdirn(my_y, dest_y, z_hops, num_rows * 2, adaptive);
+
+        if (z_dirn) {
+            assert(inport_dirn == "Local" || inport_dirn[2] == '-');
+            outport_dirn[2] = '+';
+        } else {
+            assert(inport_dirn == "Local" || inport_dirn[2] == '+');
+            outport_dirn[2] = '-';
+        }
+
+        // printf("(%d, %d, %d) -> (%d, %d, %d) -> %s\n", my_x, my_y, my_z, dest_x, dest_y, dest_z, outport_dirn.c_str());
+    } else if (x_hops > 0) {
+        if (x_dirn) {
+            assert(inport_dirn == "Local" || inport_dirn == "-00" || inport_dirn[2] != '0');
+            outport_dirn = "+00";
+        } else {
+            assert(inport_dirn == "Local" || inport_dirn == "+00" || inport_dirn[2] != '0');
+            outport_dirn = "-00";
+        }
+    } else if (y_hops > 0) {
+        if (y_dirn) {
+            assert(inport_dirn != "0+0");
+            outport_dirn = "0+0";
+        } else {
+            assert(inport_dirn != "0-0");
+            outport_dirn = "0-0";
+        }
+    } else {
+        // x_hops == 0 and y_hops == 0 and z_hops == 0
+        // this is not possible
+        // already checked that in outportCompute() function
+        panic("x_hops == y_hops == z_hops == 0");
+    }
+
+    return m_outports_dirn2idx[outport_dirn];
 }
 
 } // namespace garnet
