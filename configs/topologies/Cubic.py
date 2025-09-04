@@ -28,8 +28,8 @@ class Cubic(SimpleTopology):
         nodes = self.nodes
 
         num_routers = options.num_cpus
-        num_rows = options.packing_rows
-        num_columns = options.packing_columns
+        num_rows = options.num_rows
+        num_columns = options.num_cols
 
         # default values for link latency and router latency.
         # Can be over-ridden on a per link/router basis

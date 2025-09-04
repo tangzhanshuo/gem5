@@ -65,12 +65,16 @@ GarnetNetwork::GarnetNetwork(const Params &p)
     : Network(p)
 {
     m_num_rows = p.num_rows;
+    m_num_cols = p.num_cols;
     m_ni_flit_size = p.ni_flit_size;
     m_max_vcs_per_vnet = 0;
     m_buffers_per_data_vc = p.buffers_per_data_vc;
     m_buffers_per_ctrl_vc = p.buffers_per_ctrl_vc;
     m_routing_algorithm = p.routing_algorithm;
     m_next_packet_id = 0;
+    
+    // Initialize m_num_layers to 0, will be calculated in init()
+    m_num_layers = 0;
 
     m_enable_fault_model = p.enable_fault_model;
     if (m_enable_fault_model)
@@ -124,14 +128,27 @@ GarnetNetwork::init()
     // Initialize topology specific parameters
     if (getNumRows() > 0) {
         // Only for Mesh topology
-        // m_num_rows and m_num_cols are only used for
-        // implementing XY or custom routing in RoutingUnit.cc
+        // m_num_rows, m_num_cols, and m_num_layers are only used for
+        // implementing XY/ZXY or custom routing in RoutingUnit.cc
         m_num_rows = getNumRows();
-        m_num_cols = m_routers.size() / m_num_rows;
-        assert(m_num_rows * m_num_cols == m_routers.size());
+        
+        // Calculate dimensions based on total number of routers
+        // For a mesh topology, we expect routers = rows * cols * layers
+        if (getNumCols() > 0) {
+            // If cols is specified, calculate layers
+            m_num_cols = getNumCols();
+            m_num_layers = m_routers.size() / (m_num_rows * m_num_cols);
+            assert(m_num_rows * m_num_cols * m_num_layers == m_routers.size());
+        } else {
+            // Default to 2D mesh (1 layer) if cols not specified
+            m_num_layers = 1;
+            m_num_cols = m_routers.size() / m_num_rows;
+            assert(m_num_rows * m_num_cols == m_routers.size());
+        }
     } else {
         m_num_rows = -1;
         m_num_cols = -1;
+        m_num_layers = -1;
     }
 
     // FaultModel: declare each router to the fault model

@@ -54,7 +54,7 @@ class Mesh_westfirst(SimpleTopology):
         nodes = self.nodes
 
         num_routers = options.num_cpus
-        num_rows = options.mesh_rows
+        num_rows = options.num_rows
 
         # default values for link latency and router latency.
         # Can be over-ridden on a per link/router basis

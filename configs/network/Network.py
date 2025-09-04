@@ -42,10 +42,16 @@ def define_options(parser):
         help="check configs/topologies for complete set",
     )
     parser.add_argument(
-        "--mesh-rows",
+        "--num-rows",
         type=int,
         default=0,
-        help="the number of rows in the mesh topology",
+        help="the number of rows in the topology",
+    )
+    parser.add_argument(
+        "--num-cols",
+        type=int,
+        default=0,
+        help="the number of columns in the topology",
     )
     parser.add_argument(
         "--network",
@@ -119,22 +125,6 @@ def define_options(parser):
             channel for each virtual network""",
     )
 
-    parser.add_argument(
-        "--packing-rows",
-        action="store",
-        type=int,
-        default=4,
-        help="""number of rows to pack in the Cubic Close Packing topology""",
-    )
-
-    parser.add_argument(
-        "--packing-columns",
-        action="store",
-        type=int,
-        default=4,
-        help="""number of columns to pack in the Cubic Close Packing topology""",
-    )
-
 
 def create_network(options, ruby):
 
@@ -180,7 +170,8 @@ def create_network(options, ruby):
 def init_network(options, network, InterfaceClass):
 
     if options.network == "garnet":
-        network.num_rows = options.mesh_rows
+        network.num_rows = options.num_rows
+        network.num_cols = options.num_cols
         network.vcs_per_vnet = options.vcs_per_vnet
         network.ni_flit_size = options.link_width_bits / 8
         network.routing_algorithm = options.routing_algorithm

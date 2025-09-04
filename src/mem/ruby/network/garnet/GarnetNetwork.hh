@@ -71,9 +71,10 @@ class GarnetNetwork : public Network
 
     // Configuration (set externally)
 
-    // for 2D topology
+    // for 2D/3D topology
     int getNumRows() const { return m_num_rows; }
     int getNumCols() { return m_num_cols; }
+    int getNumLayers() { return m_num_layers; }
 
     // for network
     uint32_t getNiFlitSize() const { return m_ni_flit_size; }
@@ -161,6 +162,7 @@ class GarnetNetwork : public Network
     // Configuration
     int m_num_rows;
     int m_num_cols;
+    int m_num_layers;
     uint32_t m_ni_flit_size;
     uint32_t m_max_vcs_per_vnet;
     uint32_t m_buffers_per_ctrl_vc;
