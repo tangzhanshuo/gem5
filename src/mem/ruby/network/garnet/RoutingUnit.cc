@@ -334,7 +334,7 @@ RoutingUnit::outportComputeZXY(RouteInfo route,
     return m_outports_dirn2idx[outport_dirn];
 }
 
-char getXYdirn(int my_x, int dest_x, int z_hops, int max_x, bool adaptive) {
+char getXYdirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adaptive) {
     assert (abs(dest_x - my_x) % 2 == z_hops % 2);
 
     if (my_x == 0) return '+';
@@ -346,18 +346,22 @@ char getXYdirn(int my_x, int dest_x, int z_hops, int max_x, bool adaptive) {
 
     if (!adaptive) return '-';
 
-    std::vector<std::vector<int>> route_count(max_x, std::vector<int>(z_hops + 1, 0));
-
-    route_count[dest_x][0] = 1;
-    for (int z = 1; z <= z_hops; z++) {
-        for (int x = 0; x < max_x; x++) {
-            if (x > 0) route_count[x][z] += route_count[x - 1][z - 1];
-            if (x < max_x - 1) route_count[x][z] += route_count[x + 1][z - 1];
+    static const auto route_count = [&]() -> std::vector<std::vector<std::vector<int>>> {
+        std::vector<std::vector<std::vector<int>>> rc(max_x, std::vector<std::vector<int>>(max_x, std::vector<int>(max_z, 0)));
+        for (int x0 = 0; x0 < max_x; x0++) {
+            rc[x0][x0][0] = 1;
+            for (int z = 1; z < max_z; z++) {
+                for (int x = 0; x < max_x; x++) {
+                    if (x > 0) rc[x0][x][z] += rc[x0][x - 1][z - 1];
+                    if (x < max_x - 1) rc[x0][x][z] += rc[x0][x + 1][z - 1];
+                }
+            }
         }
-    }
+        return rc;
+    }();
 
-    int left_routes = route_count[my_x - 1][z_hops - 1];
-    int right_routes = route_count[my_x + 1][z_hops - 1];
+    int left_routes = route_count[dest_x][my_x - 1][z_hops - 1];
+    int right_routes = route_count[dest_x][my_x + 1][z_hops - 1];
 
     assert (left_routes > 0 && right_routes > 0);
 
@@ -413,8 +417,8 @@ RoutingUnit::outportComputeCustom(RouteInfo route,
 
         outport_dirn = "000";
 
-        outport_dirn[0] = getXYdirn(my_x, dest_x, z_hops, num_cols * 2, adaptive);
-        outport_dirn[1] = getXYdirn(my_y, dest_y, z_hops, num_rows * 2, adaptive);
+        outport_dirn[0] = getXYdirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
+        outport_dirn[1] = getXYdirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
 
         if (z_dirn) {
             assert(inport_dirn == "Local" || inport_dirn[2] == '-');
