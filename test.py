@@ -111,6 +111,34 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--bubble",
             "--routing-algorithm=2"
         ])
+    elif config.topology == "Cubic":
+        command.extend([
+            "--num-cpus=128",
+            "--num-dirs=128",
+            "--topology=Cubic",
+            "--num-rows=4",
+            "--num-cols=4",
+            "--routing-algorithm=2"
+        ])
+    elif config.topology == "CubicClosePackingDeterministic":
+        command.extend([
+            "--num-cpus=128",
+            "--num-dirs=128",
+            "--topology=CubicClosePacking",
+            "--num-rows=4",
+            "--num-cols=4",
+            "--routing-algorithm=3"
+        ])
+    elif config.topology == "CubicClosePackingAdaptive":
+        command.extend([
+            "--num-cpus=128",
+            "--num-dirs=128",
+            "--topology=CubicClosePacking",
+            "--num-rows=4",
+            "--num-cols=4",
+            "--routing-algorithm=4"
+        ])
+        
     
     # Add wormhole option if enabled
     if config.wormhole:
@@ -352,6 +380,8 @@ def plot(configs, data_file="simulation_data.json", filename="plot.png", title="
                 label = "1 VC, 1 Depth"
             else:
                 raise ValueError(f"Unknown configuration: {config}")
+        elif label_type == "topology":
+            label = f"{config.topology}"
         
         # Plot the data
         plt.plot(df['throughput'], df['latency'], marker='o', linestyle='-', linewidth=2, markersize=6, label=label)
