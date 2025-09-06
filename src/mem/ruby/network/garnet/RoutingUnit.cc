@@ -496,9 +496,9 @@ RoutingUnit::outportComputeBCC(RouteInfo route,
     bool y_dirn = (dest_y >= my_y);
     bool z_dirn = (dest_z >= my_z);
 
-    bool x_maj = x_hops >= y_hops && x_hops >= z_hops;
-    [[maybe_unused]] bool y_maj = y_hops >= x_hops && y_hops >= z_hops;
-    bool z_maj = z_hops >= x_hops && z_hops >= y_hops;
+    bool x_maj = x_hops >= y_hops && 2 * x_hops >= z_hops;
+    [[maybe_unused]] bool y_maj = y_hops >= x_hops && 2 * y_hops >= z_hops;
+    bool z_maj = z_hops >= 2 * x_hops && z_hops >= 2 * y_hops;
 
     // already checked that in outportCompute() function
     assert(!(x_hops == 0 && y_hops == 0 && z_hops == 0));

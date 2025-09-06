@@ -154,17 +154,6 @@ class BodyCenteredPacking(SimpleTopology):
                     add_link(nnp_pos, '++-', '--+', 1)
                     add_link(nnn_pos, '+++', '---', 1)
 
-                    if z == num_layers - 1: # Add ceilings to last layer
-                        left_pos = (x-1, y, z)
-                        right_pos = (x+1, y, z)
-                        down_pos = (x, y-1, z)
-                        up_pos = (x, y+1, z)
-
-                        add_link(left_pos, '+00', '-00', 3)
-                        add_link(right_pos, '-00', '+00', 3)
-                        add_link(down_pos, '0+0', '0-0', 2)
-                        add_link(up_pos, '0-0', '0+0', 2)
-                        
         network.int_links = int_links
 
     # Register nodes with filesystem
