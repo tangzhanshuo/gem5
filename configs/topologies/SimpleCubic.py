@@ -15,8 +15,8 @@ from topologies.BaseTopology import SimpleTopology
 # to guarantee deadlock freedom.
 
 
-class Cubic(SimpleTopology):
-    description = "Cubic"
+class SimpleCubic(SimpleTopology):
+    description = "SimpleCubic"
 
     def __init__(self, controllers):
         self.nodes = controllers

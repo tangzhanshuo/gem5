@@ -195,10 +195,14 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
         // any custom algorithm
         case ZXY_: outport =
             outportComputeZXY(route, inport, inport_dirn); break;
-        case CUSTOM_DETERMINISTIC_: outport =
-            outportComputeCustom(route, inport, inport_dirn, false); break;
-        case CUSTOM_ADAPTIVE_: outport =
-            outportComputeCustom(route, inport, inport_dirn, true); break;
+        case FCC_DETERMINISTIC_: outport =
+            outportComputeFCC(route, inport, inport_dirn, false); break;
+        case FCC_RANDOM_: outport =
+            outportComputeFCC(route, inport, inport_dirn, true); break;
+        case BCC_DETERMINISTIC_:
+            outportComputeBCC(route, inport, inport_dirn, false); break;
+        case BCC_RANDOM_:
+            outportComputeBCC(route, inport, inport_dirn, true); break;
         default: outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
     }
@@ -334,7 +338,7 @@ RoutingUnit::outportComputeZXY(RouteInfo route,
     return m_outports_dirn2idx[outport_dirn];
 }
 
-char getXYdirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adaptive) {
+char FCCXYDirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adaptive) {
     assert (abs(dest_x - my_x) % 2 == z_hops % 2);
 
     if (my_x == 0) return '+';
@@ -373,9 +377,9 @@ char getXYdirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adap
     else return '+';
 }
 
-// Custom Routing for CubicClosePacking
+// Custom Routing for FaceCenteredPacking
 int
-RoutingUnit::outportComputeCustom(RouteInfo route,
+RoutingUnit::outportComputeFCC(RouteInfo route,
                                   int inport,
                                   PortDirection inport_dirn,
                                   bool adaptive)
@@ -417,8 +421,8 @@ RoutingUnit::outportComputeCustom(RouteInfo route,
 
         outport_dirn = "000";
 
-        outport_dirn[0] = getXYdirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
-        outport_dirn[1] = getXYdirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
+        outport_dirn[0] = FCCXYDirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
+        outport_dirn[1] = FCCXYDirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
 
         if (z_dirn) {
             assert(inport_dirn == "Local" || inport_dirn[2] == '-');
@@ -453,6 +457,81 @@ RoutingUnit::outportComputeCustom(RouteInfo route,
     }
 
     return m_outports_dirn2idx[outport_dirn];
+}
+
+char BCCXYDirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adaptive){
+    return '0';
+}
+
+char BCCYDirn(int my_y, int dest_y, int z_hops, int max_y, int max_z, bool adaptive){
+    return '0';
+}
+
+int
+RoutingUnit::outportComputeBCC(RouteInfo route,
+                                  int inport,
+                                  PortDirection inport_dirn,
+                                  bool adaptive)
+{
+    [[maybe_unused]] int num_rows = m_router->get_net_ptr()->getNumRows();
+    int num_cols = m_router->get_net_ptr()->getNumCols();
+    int num_layers = m_router->get_net_ptr()->getNumLayers();
+    assert(num_rows > 0 && num_cols > 0 && num_layers > 0);
+
+    int my_id = m_router->get_id();
+    int my_x = my_id % num_cols;
+    int my_y = (my_id / num_cols) % num_rows;
+    int my_z = my_id / (num_cols * num_rows);
+
+    int dest_id = route.dest_router;
+    int dest_x = dest_id % num_cols;
+    int dest_y = (dest_id / num_cols) % num_rows;
+    int dest_z = dest_id / (num_cols * num_rows);
+
+    int x_hops = abs(dest_x - my_x);
+    int y_hops = abs(dest_y - my_y);
+    int z_hops = abs(dest_z - my_z);
+
+    bool x_dirn = (dest_x >= my_x);
+    bool y_dirn = (dest_y >= my_y);
+    bool z_dirn = (dest_z >= my_z);
+
+    bool x_maj = x_hops >= y_hops && x_hops >= z_hops;
+    [[maybe_unused]] bool y_maj = y_hops >= x_hops && y_hops >= z_hops;
+    bool z_maj = z_hops >= x_hops && z_hops >= y_hops;
+
+    // already checked that in outportCompute() function
+    assert(!(x_hops == 0 && y_hops == 0 && z_hops == 0));
+
+    outport_dirn = "000";
+
+    if (z_maj) {
+        
+        outport_dirn[2] = z_dirn ? '+' : '-';
+
+        outport_dirn[0] = BCCXYDirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
+        outport_dirn[1] = BCCXYDirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
+
+    } else if (z == num_layers - 1) {
+        // Top layer special alg for z
+        outport_dirn[2] = '-';
+        if (x_maj) {
+            outport_dirn[0] = x_dirn ? '+' : '-';
+            outport_dirn[1] = BCCYDirn(my_y, dest_y, x_hops, num_rows * 2, num_layers, adaptive);
+        } else if (x == num_cols - 1) {
+            outport_dirn[0] = '-';
+            outport_dirn[1] = y_dirn ? '+' : '-';
+        } else { // y_maj
+            outport_dirn[0] = '+'; // Increase x first
+            outport_dirn[1] = BCCYDirn(my_y, dest_y, x_hops, num_rows * 2, num_layers, adaptive);
+        }
+
+    } else { // Increase z first
+        outport_dirn[2] = '+';
+        outport_dirn[0] = BCCXYDirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
+        outport_dirn[1] = BCCXYDirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
+    }
+
 }
 
 } // namespace garnet

@@ -1,7 +1,7 @@
 ./build/NULL/gem5.opt \
 configs/example/garnet_synth_traffic.py \
 --network=garnet --num-cpus=64 --num-dirs=64 \
---topology=Cubic --num-rows=4 --num-cols=4 --routing-algorithm=2 \
+--topology=SimpleCubic --num-rows=4 --num-cols=4 --routing-algorithm=2 \
 --inj-vnet=0 --synthetic=uniform_random \
 --sim-cycles=10000 --injectionrate=0.01
 

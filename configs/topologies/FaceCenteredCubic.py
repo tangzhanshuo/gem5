@@ -15,8 +15,8 @@ from topologies.BaseTopology import SimpleTopology
 # to guarantee deadlock freedom.
 
 
-class CubicClosePacking(SimpleTopology):
-    description = "CubicClosePacking"
+class FaceCenteredPacking(SimpleTopology):
+    description = "FaceCenteredPacking"
 
     def __init__(self, controllers):
         self.nodes = controllers

@@ -111,11 +111,11 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--bubble",
             "--routing-algorithm=2"
         ])
-    elif config.topology == "Cubic":
+    elif config.topology == "SimpleCubic":
         command.extend([
             "--num-cpus=128",
             "--num-dirs=128",
-            "--topology=Cubic",
+            "--topology=SimpleCubic",
             "--num-rows=4",
             "--num-cols=4",
             "--routing-algorithm=2"
@@ -124,7 +124,7 @@ def run(injection_rate, config=None, output_dir="m5out"):
         command.extend([
             "--num-cpus=128",
             "--num-dirs=128",
-            "--topology=CubicClosePacking",
+            "--topology=FaceCenteredPacking",
             "--num-rows=4",
             "--num-cols=4",
             "--routing-algorithm=3"
@@ -133,7 +133,7 @@ def run(injection_rate, config=None, output_dir="m5out"):
         command.extend([
             "--num-cpus=128",
             "--num-dirs=128",
-            "--topology=CubicClosePacking",
+            "--topology=FaceCenteredPacking",
             "--num-rows=4",
             "--num-cols=4",
             "--routing-algorithm=4"
