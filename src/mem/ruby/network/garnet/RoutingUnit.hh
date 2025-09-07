@@ -78,7 +78,7 @@ class RoutingUnit
                           int inport,
                           PortDirection inport_dirn);
 
-    // Custom Routing for FaceCenteredPacking
+    // Custom Routing for FaceCenteredCubic
     int outportComputeFCC(RouteInfo route,
                                           int inport,
                                           PortDirection inport_dirn,

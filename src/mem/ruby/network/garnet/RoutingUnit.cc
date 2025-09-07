@@ -377,7 +377,7 @@ char FCCXYDirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adap
     else return '+';
 }
 
-// Custom Routing for FaceCenteredPacking
+// Custom Routing for FaceCenteredCubic
 int
 RoutingUnit::outportComputeFCC(RouteInfo route,
                                   int inport,
@@ -460,33 +460,14 @@ RoutingUnit::outportComputeFCC(RouteInfo route,
 }
 
 char BCCXYDirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adaptive){
+    assert (abs(my_x - dest_x) <= z_hops);
     assert (abs(my_x - dest_x) % 2 == z_hops % 2);
 
     if (my_x == 0) return '+';
     if (my_x == max_x - 1) return '-';
 
-    if (abs(my_x - dest_x) >= z_hops) {
+    if (abs(my_x - dest_x) == z_hops) {
         return my_x < dest_x ? '+' : '-';
-    }
-
-    if (!adaptive) return '-';
-
-    static std::mt19937 gen(12345);
-    std::uniform_int_distribution<int> dis(0, 1);
-    int choice = dis(gen);
-
-    if (choice == 0) return '-';
-    else return '+';
-}
-
-char BCCYDirn(int my_y, int dest_y, int x_hops, int max_y, int max_x, bool adaptive){
-    assert (abs(my_y - dest_y) % 2 == x_hops % 2);
-
-    if (my_y == 0) return '+';
-    if (my_y == max_y - 1) return '-';
-
-    if (abs(my_y - dest_y) >= x_hops) {
-        return my_y < dest_y ? '+' : '-';
     }
 
     if (!adaptive) return '-';
@@ -541,36 +522,36 @@ RoutingUnit::outportComputeBCC(RouteInfo route,
     // already checked that in outportCompute() function
     assert(!(x_hops == 0 && y_hops == 0 && z_hops == 0));
 
+    int total_hops = std::max(x_hops, std::max(y_hops, z_hops));
+
     std::string outport_dirn = "000";
 
     if (z_maj) {
         
         outport_dirn[2] = z_dirn ? '+' : '-';
 
-        outport_dirn[0] = BCCXYDirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
-        outport_dirn[1] = BCCXYDirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
+        outport_dirn[0] = BCCXYDirn(my_x, dest_x, total_hops, num_cols * 2, num_layers, adaptive);
+        outport_dirn[1] = BCCXYDirn(my_y, dest_y, total_hops, num_rows * 2, num_layers, adaptive);
 
     } else if (my_z == num_layers - 1) {
         // Top layer special alg for z
         outport_dirn[2] = '-';
         if (x_maj) {
             outport_dirn[0] = x_dirn ? '+' : '-';
-            outport_dirn[1] = BCCYDirn(my_y, dest_y, x_hops, num_rows * 2, num_layers, adaptive);
+            outport_dirn[1] = BCCXYDirn(my_y, dest_y, total_hops, num_rows * 2, num_cols * 2, false);
         } else if (my_x == 2 * num_cols - 1) {
             outport_dirn[0] = '-';
             outport_dirn[1] = y_dirn ? '+' : '-';
         } else { // y_maj
             outport_dirn[0] = '+'; // Increase x first
-            outport_dirn[1] = BCCYDirn(my_y, dest_y, x_hops, num_rows * 2, num_layers, adaptive);
+            outport_dirn[1] = BCCXYDirn(my_y, dest_y, total_hops, num_rows * 2, num_cols * 2, false);
         }
 
     } else { // Increase z first
         outport_dirn[2] = '+';
-        outport_dirn[0] = BCCXYDirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
-        outport_dirn[1] = BCCXYDirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
+        outport_dirn[0] = BCCXYDirn(my_x, dest_x, total_hops, num_cols * 2, num_layers, adaptive);
+        outport_dirn[1] = BCCXYDirn(my_y, dest_y, total_hops, num_rows * 2, num_layers, false);
     }
-
-    // printf("%s\n", outport_dirn.c_str());
 
     return m_outports_dirn2idx[outport_dirn];
 }
