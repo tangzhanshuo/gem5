@@ -471,7 +471,12 @@ char BCCXYDirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adap
 
     if (!adaptive) return '-';
 
-    return '-';
+    static std::mt19937 gen(12345);
+    std::uniform_int_distribution<int> dis(0, 1);
+    int choice = dis(gen);
+
+    if (choice == 0) return '-';
+    else return '+';
 }
 
 char BCCYDirn(int my_y, int dest_y, int x_hops, int max_y, int max_x, bool adaptive){
@@ -486,7 +491,12 @@ char BCCYDirn(int my_y, int dest_y, int x_hops, int max_y, int max_x, bool adapt
 
     if (!adaptive) return '-';
 
-    return '-';
+    static std::mt19937 gen(12345);
+    std::uniform_int_distribution<int> dis(0, 1);
+    int choice = dis(gen);
+
+    if (choice == 0) return '-';
+    else return '+';
 }
 
 int
