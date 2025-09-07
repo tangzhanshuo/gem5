@@ -120,7 +120,7 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--num-cols=4",
             "--routing-algorithm=2"
         ])
-    elif config.topology == "CubicClosePackingDeterministic":
+    elif config.topology == "FaceCenteredCubicDeterministic":
         command.extend([
             "--num-cpus=128",
             "--num-dirs=128",
@@ -129,7 +129,7 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--num-cols=4",
             "--routing-algorithm=3"
         ])
-    elif config.topology == "CubicClosePackingAdaptive":
+    elif config.topology == "FaceCenteredCubicAdaptive":
         command.extend([
             "--num-cpus=128",
             "--num-dirs=128",
@@ -138,7 +138,25 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--num-cols=4",
             "--routing-algorithm=4"
         ])
-        
+    elif config.topology == "BodyCenteredCubicDeterministic":
+        command.extend([
+            "--num-cpus=128",
+            "--num-dirs=128",
+            "--topology=BodyCenteredCubic",
+            "--num-rows=4",
+            "--num-cols=4",
+            "--routing-algorithm=5"
+        ])
+    elif config.topology == "BodyCenteredCubicAdaptive":
+        command.extend([
+            "--num-cpus=128",
+            "--num-dirs=128",
+            "--topology=BodyCenteredCubic",
+            "--num-rows=4",
+            "--num-cols=4",
+            "--routing-algorithm=6"
+        ])
+    
     
     # Add wormhole option if enabled
     if config.wormhole:
@@ -237,7 +255,7 @@ def run_tests(config=None, overwrite=False):
           f"  {config}")
     
     # Define the range of injection rates to test
-    injection_rates = [round(0.01 * i, 2) for i in range(1, 101)]
+    injection_rates = [round(0.005 * i, 3) for i in range(1, 101)]
     
     # Check if we should overwrite or handle existing data conditionally
     if not overwrite and len(all_data[config_key]) == 100:
