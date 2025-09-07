@@ -459,24 +459,43 @@ RoutingUnit::outportComputeFCC(RouteInfo route,
     return m_outports_dirn2idx[outport_dirn];
 }
 
-char BCCXYDirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adaptive){
-    assert (abs(my_x - dest_x) <= z_hops);
-    assert (abs(my_x - dest_x) % 2 == z_hops % 2);
+char BCCXYDirn(int my_x, int dest_x, int total_hops, int max_x, int max_z, bool adaptive){
+    assert (abs(my_x - dest_x) <= total_hops);
+    assert (abs(my_x - dest_x) % 2 == total_hops % 2);
 
     if (my_x == 0) return '+';
     if (my_x == max_x - 1) return '-';
 
-    if (abs(my_x - dest_x) == z_hops) {
+    if (abs(my_x - dest_x) == total_hops) {
         return my_x < dest_x ? '+' : '-';
     }
 
     if (!adaptive) return '-';
 
+    static const auto route_count = [&]() -> std::vector<std::vector<std::vector<int>>> {
+        std::vector<std::vector<std::vector<int>>> rc(max_x, std::vector<std::vector<int>>(max_x, std::vector<int>(max_z, 0)));
+        for (int x0 = 0; x0 < max_x; x0++) {
+            rc[x0][x0][0] = 1;
+            for (int z = 1; z < max_z; z++) {
+                for (int x = 0; x < max_x; x++) {
+                    if (x > 0) rc[x0][x][z] += rc[x0][x - 1][z - 1];
+                    if (x < max_x - 1) rc[x0][x][z] += rc[x0][x + 1][z - 1];
+                }
+            }
+        }
+        return rc;
+    }();
+
+    int left_routes = route_count[dest_x][my_x - 1][total_hops - 1];
+    int right_routes = route_count[dest_x][my_x + 1][total_hops - 1];
+
+    assert (left_routes > 0 && right_routes > 0);
+
     static std::mt19937 gen(12345);
-    std::uniform_int_distribution<int> dis(0, 1);
+    std::uniform_int_distribution<int> dis(0, left_routes + right_routes - 1);
     int choice = dis(gen);
 
-    if (choice == 0) return '-';
+    if (choice < left_routes) return '-';
     else return '+';
 }
 
