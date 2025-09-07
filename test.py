@@ -129,7 +129,7 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--num-cols=4",
             "--routing-algorithm=3"
         ])
-    elif config.topology == "FaceCenteredCubicAdaptive":
+    elif config.topology == "FaceCenteredCubicRandom":
         command.extend([
             "--num-cpus=128",
             "--num-dirs=128",
@@ -138,7 +138,7 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--num-cols=4",
             "--routing-algorithm=4"
         ])
-    elif config.topology == "BodyCenteredCubicDeterministic":
+    elif config.topology == "BodyCenteredCubic":
         command.extend([
             "--num-cpus=128",
             "--num-dirs=128",
@@ -146,15 +146,6 @@ def run(injection_rate, config=None, output_dir="m5out"):
             "--num-rows=4",
             "--num-cols=4",
             "--routing-algorithm=5"
-        ])
-    elif config.topology == "BodyCenteredCubicAdaptive":
-        command.extend([
-            "--num-cpus=128",
-            "--num-dirs=128",
-            "--topology=BodyCenteredCubic",
-            "--num-rows=4",
-            "--num-cols=4",
-            "--routing-algorithm=6"
         ])
     
     
