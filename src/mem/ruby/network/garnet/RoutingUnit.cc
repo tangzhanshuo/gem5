@@ -199,9 +199,9 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
             outportComputeFCC(route, inport, inport_dirn, false); break;
         case FCC_RANDOM_: outport =
             outportComputeFCC(route, inport, inport_dirn, true); break;
-        case BCC_DETERMINISTIC_:
+        case BCC_DETERMINISTIC_: outport =
             outportComputeBCC(route, inport, inport_dirn, false); break;
-        case BCC_RANDOM_:
+        case BCC_RANDOM_: outport =
             outportComputeBCC(route, inport, inport_dirn, true); break;
         default: outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
@@ -460,11 +460,33 @@ RoutingUnit::outportComputeFCC(RouteInfo route,
 }
 
 char BCCXYDirn(int my_x, int dest_x, int z_hops, int max_x, int max_z, bool adaptive){
-    return '0';
+    assert (abs(my_x - dest_x) % 2 == z_hops % 2);
+
+    if (my_x == 0) return '+';
+    if (my_x == max_x - 1) return '-';
+
+    if (abs(my_x - dest_x) >= z_hops) {
+        return my_x < dest_x ? '+' : '-';
+    }
+
+    if (!adaptive) return '-';
+
+    return '-';
 }
 
-char BCCYDirn(int my_y, int dest_y, int z_hops, int max_y, int max_z, bool adaptive){
-    return '0';
+char BCCYDirn(int my_y, int dest_y, int x_hops, int max_y, int max_x, bool adaptive){
+    assert (abs(my_y - dest_y) % 2 == x_hops % 2);
+
+    if (my_y == 0) return '+';
+    if (my_y == max_y - 1) return '-';
+
+    if (abs(my_y - dest_y) >= x_hops) {
+        return my_y < dest_y ? '+' : '-';
+    }
+
+    if (!adaptive) return '-';
+
+    return '-';
 }
 
 int
@@ -483,10 +505,16 @@ RoutingUnit::outportComputeBCC(RouteInfo route,
     int my_y = (my_id / num_cols) % num_rows;
     int my_z = my_id / (num_cols * num_rows);
 
+    my_x = my_x * 2 + my_z % 2;
+    my_y = my_y * 2 + my_z % 2;
+
     int dest_id = route.dest_router;
     int dest_x = dest_id % num_cols;
     int dest_y = (dest_id / num_cols) % num_rows;
     int dest_z = dest_id / (num_cols * num_rows);
+
+    dest_x = dest_x * 2 + dest_z % 2;
+    dest_y = dest_y * 2 + dest_z % 2;
 
     int x_hops = abs(dest_x - my_x);
     int y_hops = abs(dest_y - my_y);
@@ -496,14 +524,14 @@ RoutingUnit::outportComputeBCC(RouteInfo route,
     bool y_dirn = (dest_y >= my_y);
     bool z_dirn = (dest_z >= my_z);
 
-    bool x_maj = x_hops >= y_hops && 2 * x_hops >= z_hops;
-    [[maybe_unused]] bool y_maj = y_hops >= x_hops && 2 * y_hops >= z_hops;
-    bool z_maj = z_hops >= 2 * x_hops && z_hops >= 2 * y_hops;
+    bool x_maj = x_hops >= y_hops && x_hops >= z_hops;
+    [[maybe_unused]] bool y_maj = y_hops >= x_hops && y_hops >= z_hops;
+    bool z_maj = z_hops >= x_hops && z_hops >= y_hops;
 
     // already checked that in outportCompute() function
     assert(!(x_hops == 0 && y_hops == 0 && z_hops == 0));
 
-    outport_dirn = "000";
+    std::string outport_dirn = "000";
 
     if (z_maj) {
         
@@ -512,13 +540,13 @@ RoutingUnit::outportComputeBCC(RouteInfo route,
         outport_dirn[0] = BCCXYDirn(my_x, dest_x, z_hops, num_cols * 2, num_layers, adaptive);
         outport_dirn[1] = BCCXYDirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
 
-    } else if (z == num_layers - 1) {
+    } else if (my_z == num_layers - 1) {
         // Top layer special alg for z
         outport_dirn[2] = '-';
         if (x_maj) {
             outport_dirn[0] = x_dirn ? '+' : '-';
             outport_dirn[1] = BCCYDirn(my_y, dest_y, x_hops, num_rows * 2, num_layers, adaptive);
-        } else if (x == num_cols - 1) {
+        } else if (my_x == 2 * num_cols - 1) {
             outport_dirn[0] = '-';
             outport_dirn[1] = y_dirn ? '+' : '-';
         } else { // y_maj
@@ -532,6 +560,9 @@ RoutingUnit::outportComputeBCC(RouteInfo route,
         outport_dirn[1] = BCCXYDirn(my_y, dest_y, z_hops, num_rows * 2, num_layers, adaptive);
     }
 
+    // printf("%s\n", outport_dirn.c_str());
+
+    return m_outports_dirn2idx[outport_dirn];
 }
 
 } // namespace garnet
